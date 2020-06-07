@@ -1,4 +1,5 @@
 import { NowRequest, NowResponse } from '@now/node'
+const cors = require('micro-cors')()
 import { createJwtToken } from 'lib/token'
 
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
@@ -11,7 +12,11 @@ const user = {
 
 export type User = typeof user
 
-export default async (req: NowRequest, res: NowResponse) => {
+const handler = async (req: NowRequest, res: NowResponse) => {
+  if (req.method === 'OPTIONS') {
+    res.status(200).send('ok')
+  }
+
   if (req.method === 'POST') {
     const { username, password } = req.body
 
@@ -30,3 +35,5 @@ export default async (req: NowRequest, res: NowResponse) => {
     res.status(200).json({ token: createJwtToken(user) })
   }
 }
+
+module.exports = cors(handler)
