@@ -1,14 +1,22 @@
 import React, { useState, FormEvent } from 'react'
+import { useMutation } from 'react-query'
+import { login } from '../lib/mutations'
 import { Button } from 'components'
 
 export default function Login() {
   const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
+  const [mutate] = useMutation(login)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    console.log(`${username} - ${password}`)
+    try {
+      const response = await mutate({ username, password })
+      console.log(response)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   return (

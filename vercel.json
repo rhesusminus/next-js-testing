@@ -1,0 +1,7 @@
+{
+  "env": {
+    "ACCESS_TOKEN": "@access_token_secret",
+    "REFRESH_TOKEN_SECRET": "@refresh_token_secret"
+  },
+  "regions": ["arn1"]
+}

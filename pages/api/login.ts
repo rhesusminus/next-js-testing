@@ -1,4 +1,5 @@
 import { NowRequest, NowResponse } from '@now/node'
+import { createJwtToken } from 'lib/token'
 
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
@@ -8,17 +9,24 @@ const user = {
   password: 'kissa'
 }
 
-export default (req: NowRequest, res: NowResponse) => {
-  console.log(req.body)
-  const { username, password } = req.body
+export type User = typeof user
 
-  if (!username || !password) {
-    res.statusCode = 401
-    res.json({ error: 'invalid username or password' })
+export default async (req: NowRequest, res: NowResponse) => {
+  if (req.method === 'POST') {
+    const { username, password } = req.body
 
-    return
+    if (!username || !password) {
+      res.status(401).json({ error: 'invalid username or password' })
+
+      return
+    }
+
+    if (username !== user.username || password !== user.password) {
+      res.status(401).json({ error: 'invalid username or password' })
+
+      return
+    }
+
+    res.status(200).json({ token: createJwtToken(user) })
   }
-
-  res.statusCode = 200
-  res.json({ name: 'John Doe' })
 }
