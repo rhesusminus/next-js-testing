@@ -3,6 +3,11 @@ import { useMutation } from 'react-query'
 import { login } from '../lib/mutations'
 import { Button } from 'components'
 
+export type UserCredentials = {
+  username: string
+  password: string
+}
+
 export default function Login() {
   const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
@@ -13,7 +18,7 @@ export default function Login() {
 
     try {
       const response = await mutate({ username, password })
-      console.log(response)
+      console.log(response.data.token)
     } catch (error) {
       console.error(error)
     }

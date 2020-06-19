@@ -18,3 +18,5 @@ export const createJwtToken = (user: User) =>
 
 export const createRefreshToken = (user: User) =>
   jwt.sign({ sub: user.id, name: user.username }, process.env.REFRESH_TOKEN_SECRET)
+
+export const verifyToken = (token: string) => jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)

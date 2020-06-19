@@ -1,8 +1,8 @@
 import { NowRequest, NowResponse } from '@now/node'
-const cors = require('micro-cors')()
-import { createJwtToken } from 'lib/token'
-
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+import { serialize } from 'cookie'
+import azure from 'azure-storage'
+import { createJwtToken, createRefreshToken } from 'lib/token'
+import { insertEntity } from 'lib/azure-storage'
 
 const user = {
   id: 1,
@@ -12,28 +12,35 @@ const user = {
 
 export type User = typeof user
 
-const handler = async (req: NowRequest, res: NowResponse) => {
-  if (req.method === 'OPTIONS') {
-    res.status(200).send('ok')
+export default async (req: NowRequest, res: NowResponse) => {
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed')
   }
 
-  if (req.method === 'POST') {
-    const { username, password } = req.body
+  const { username, password } = req.body
+  const tableSvc = azure.createTableService(process.env.AZURE_STORAGE_ACCOUNT, process.env.AZURE_STORAGE_ACCESS_KEY)
 
-    if (!username || !password) {
-      res.status(401).json({ error: 'invalid username or password' })
-
-      return
-    }
-
-    if (username !== user.username || password !== user.password) {
-      res.status(401).json({ error: 'invalid username or password' })
-
-      return
-    }
-
-    res.status(200).json({ token: createJwtToken(user) })
+  if (!username || !password) {
+    return res.status(401).json({ error: 'invalid username or password' })
   }
+
+  if (username !== user.username || password !== user.password) {
+    return res.status(401).json({ error: 'invalid username or password' })
+  }
+
+  const refreshToken = createRefreshToken(user)
+  const entGen = azure.TableUtilities.entityGenerator
+  const token = {
+    PartitionKey: entGen.String('refreshToken'),
+    RowKey: entGen.String(refreshToken)
+  }
+
+  insertEntity(tableSvc, 'refreshTokens', token)
+    .then(() => {
+      res.status(200).setHeader('Set-Cookie', serialize('refresh-token', refreshToken, { httpOnly: true }))
+      return res.json({ token: createJwtToken(user) })
+    })
+    .catch(() => {
+      return res.status(500).send('Something went wrong')
+    })
 }
-
-module.exports = cors(handler)
